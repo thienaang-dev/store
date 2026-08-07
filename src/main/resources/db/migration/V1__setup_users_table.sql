@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY,
+  username VARCHAR(255) NOT NULL UNIQUE,
+  email VARCHAR(255),
+  password VARCHAR(255) NOT NULL,
+  roles JSONB,
+  is_deleted BOOL DEFAULT FALSE
+);
