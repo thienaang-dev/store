@@ -1,3 +1,10 @@
 spring:
   application:
     name: store
+  jpa:
+    hibernate:
+      ddl-auto: validate
+springdoc:
+  swagger-ui:
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED}
+    path: ${SPRINGDOC_SWAGGER_UI_PATH}
