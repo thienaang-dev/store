@@ -5,7 +5,7 @@
 This project uses the standard layered architecture:
 
 ```text
-Controller → Service → Repository → Database
+Controller → Service → CrudService → Repository → Database
 ```
 
 This design separates application responsibilities into independent layers,
@@ -46,6 +46,18 @@ The architecture is commonly known as:
 |   Logic        |
 | - Transactions |
 | - Rules        |
++-------+--------+
+        |
+        v
++----------------+
+|  CrudService   |
+|  Layer         |
+|                |
+| - Basic CRUD   |
+|   Operations   |
+| - Generic      |
+|   Create/Read/ |
+|   Update/Delete|
 +-------+--------+
         |
         v
@@ -160,7 +172,84 @@ public class UserService {
 
 ---
 
-## 3. Repository Layer
+## 3. CrudService Layer
+
+#### Purpose
+
+The CrudService layer provides generic, reusable implementations of basic
+CRUD (Create, Read, Update, Delete) operations, sitting between the Service
+layer and the Repository layer.
+
+#### Responsibilities
+
+- Implement generic create, read, update, and delete operations
+- Delegate persistence calls to the Repository layer
+- Provide a reusable base that Service classes can build on top of
+- Avoid duplicating basic CRUD logic across multiple services
+
+#### Example
+
+```java
+public interface CrudService<T, ID> {
+
+    T create(T entity);
+
+    T getById(ID id);
+
+    List<T> getAll();
+
+    T update(ID id, T entity);
+
+    void delete(ID id);
+}
+
+@Service
+public class UserCrudService implements CrudService<User, Long> {
+
+    private final UserRepository userRepository;
+
+    public UserCrudService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    public User create(User entity) {
+        return userRepository.save(entity);
+    }
+
+    @Override
+    public User getById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow();
+    }
+
+    @Override
+    public List<User> getAll() {
+        return userRepository.findAll();
+    }
+
+    @Override
+    public User update(Long id, User entity) {
+        entity.setId(id);
+        return userRepository.save(entity);
+    }
+
+    @Override
+    public void delete(Long id) {
+        userRepository.deleteById(id);
+    }
+}
+```
+
+#### Should NOT contain
+
+- Complex business rules
+- Cross-entity workflows
+- HTTP-specific logic
+
+---
+
+## 4. Repository Layer
 
 #### Purpose
 
@@ -193,7 +282,7 @@ public interface UserRepository
 
 ---
 
-## 4. Database Layer
+## 5. Database Layer
 
 #### Purpose
 
@@ -246,11 +335,25 @@ UserService
 getUser(10)
 ```
 
-The service determines what data is needed and calls the repository.
+The service determines what data is needed and delegates the basic lookup to
+the CrudService.
 
 ---
 
-### Step 3: Repository accesses database
+### Step 3: CrudService performs the CRUD operation
+
+```text
+UserCrudService
+        |
+        v
+getById(10)
+```
+
+The CrudService calls the repository to perform the actual data access.
+
+---
+
+### Step 4: Repository accesses database
 
 ```text
 UserRepository
@@ -263,13 +366,16 @@ The repository retrieves the entity from the database.
 
 ---
 
-### Step 4: Response returns
+### Step 5: Response returns
 
 ```text
 Database
     |
     v
 Repository
+    |
+    v
+CrudService
     |
     v
 Service
@@ -298,6 +404,9 @@ src/main/java/io/github/thienaang_dev/store/user
 │   └── impl
 │       └── UserServiceImpl.java
 │
+├── crudservice
+│   └── UserCrudService.java
+│
 ├── repository
 │   └── UserRepository.java
 │
@@ -323,6 +432,8 @@ Controller
     ↓
 Service
     ↓
+CrudService
+    ↓
 Repository
     ↓
 Database
@@ -332,16 +443,20 @@ Allowed:
 
 ```text
 Controller → Service
-Service → Repository
+Service → CrudService
+CrudService → Repository
 Repository → Database
 ```
 
 Avoid:
 
 ```text
-Controller → Repository   ❌
-Controller → Database     ❌
-Repository → Service      ❌
+Controller → Repository    ❌
+Controller → CrudService   ❌
+Controller → Database      ❌
+Service → Repository       ❌
+Repository → CrudService   ❌
+Repository → Service       ❌
 ```
 
 ---
@@ -356,6 +471,7 @@ Example:
 
 - Controller handles HTTP
 - Service handles business rules
+- CrudService handles basic CRUD operations
 - Repository handles persistence
 
 ---
@@ -397,15 +513,17 @@ The architecture supports:
 
 ## Summary
 
-The Controller-Service-Repository architecture is a common Spring Boot design
-pattern that separates application responsibilities into clear layers:
+The Controller-Service-CrudService-Repository architecture is a common Spring
+Boot design pattern that separates application responsibilities into clear
+layers:
 
-| Layer      | Responsibility                     |
-| ---------- | ---------------------------------- |
-| Controller | Handles API requests and responses |
-| Service    | Implements business logic          |
-| Repository | Handles data access                |
-| Database   | Stores persistent data             |
+| Layer       | Responsibility                     |
+| ----------- | ----------------------------------- |
+| Controller  | Handles API requests and responses |
+| Service     | Implements business logic          |
+| CrudService | Handles basic CRUD operations      |
+| Repository  | Handles data access                |
+| Database    | Stores persistent data             |
 
 Following this structure creates applications that are easier to develop, test,
 maintain, and scale.
@@ -413,11 +531,13 @@ maintain, and scale.
 ```text
 Client
   ↓
-Controller Layer   (Web/API layer)
+Controller Layer    (Web/API layer)
   ↓
-Service Layer      (Business logic layer)
+Service Layer       (Business logic layer)
   ↓
-Repository Layer   (Data access layer)
+CrudService Layer   (Basic CRUD layer)
   ↓
-Database           (Persistence layer)
+Repository Layer    (Data access layer)
+  ↓
+Database            (Persistence layer)
 ```
