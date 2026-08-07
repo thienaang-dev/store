@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.github.thienaang_dev.store.auth.dto.AuthLoginRequestDto;
+import io.github.thienaang_dev.store.auth.dto.AuthLoginResponseDto;
 import io.github.thienaang_dev.store.auth.dto.AuthRegisterRequestDto;
 import io.github.thienaang_dev.store.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,5 +29,13 @@ public class AuthController {
       @Valid @RequestBody AuthRegisterRequestDto authRegisterRequestDto) {
     authService.register(authRegisterRequestDto);
     return ResponseEntity.status(HttpStatus.CREATED).build();
+  }
+
+  @Tag(name = "Login", description = "Login a user")
+  @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "User login request", content = @io.swagger.v3.oas.annotations.media.Content(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = AuthLoginRequestDto.class)))
+  @PostMapping("/login")
+  public ResponseEntity<AuthLoginResponseDto> login(
+      @Valid @RequestBody AuthLoginRequestDto authLoginRequestDto) {
+    return ResponseEntity.ok(authService.login(authLoginRequestDto));
   }
 }

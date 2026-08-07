@@ -3,8 +3,10 @@ package io.github.thienaang_dev.store.user.entity;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -39,6 +41,7 @@ public class User {
   @Column(name = "password", nullable = false)
   private String password;
 
+  @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "roles", columnDefinition = "jsonb")
   private List<String> roles;
 

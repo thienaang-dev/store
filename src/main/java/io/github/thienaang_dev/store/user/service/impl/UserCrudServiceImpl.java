@@ -30,7 +30,23 @@ public class UserCrudServiceImpl implements CrudService<User, UUID> {
     return userRepository.findById(uuid).orElseThrow(() -> new UserNotFoundException(uuid));
   }
 
-  public Optional<User> findByUsername(String username) {
+  /**
+   * Find user by username or throw {@link UserNotFoundException}
+   *
+   * @param username Username
+   * @return User
+   */
+  public User findByUsername(String username) {
+    return userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
+  }
+
+  /**
+   * Find optional user by username
+   *
+   * @param username Username
+   * @return Optional user
+   */
+  public Optional<User> findOptionalByUsername(String username) {
     return userRepository.findByUsername(username);
   }
 
